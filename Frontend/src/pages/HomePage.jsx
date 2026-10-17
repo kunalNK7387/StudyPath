@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 
-
 export const HomePage = () => {
   const { loadSampleProfile } = useApp();
 

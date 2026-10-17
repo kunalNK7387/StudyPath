@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useTheme } from "./ThemeContext.jsx";
-import { DEFAULT_ADMISSION_TASKS } from "../data/admissionTasksData.js";
+// import { DEFAULT_ADMISSION_TASKS } from "../data/admissionTasksData.js";
 
 export const SAMPLE_INDIAN_STEM_PROFILE = {
   fullName: "Aarav Sharma",
