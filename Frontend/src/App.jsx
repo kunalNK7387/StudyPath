@@ -16,9 +16,9 @@ import { ProtectedRoute } from "./components/common/ProtectedRoute.jsx";
 import { HomePage } from "./pages/HomePage.jsx";
 import { LoginPage } from "./pages/LoginPage.jsx";
 import { RegisterPage } from "./pages/RegisterPage.jsx";
-import { ProfileAssessmentPage } from "./pages/ProfileAssessmentPage.jsx";
-import { RecommendationsPage } from "./pages/RecommendationsPage.jsx";
-import { ScholarshipFinderPage } from "./pages/ScholarshipFinderPage.jsx";
+// import { ProfileAssessmentPage } from "./pages/ProfileAssessmentPage.jsx";
+// import { RecommendationsPage } from "./pages/RecommendationsPage.jsx";
+// import { ScholarshipFinderPage } from "./pages/ScholarshipFinderPage.jsx";
 
 // Helper to scroll to top on route change
 function ScrollToTop() {
