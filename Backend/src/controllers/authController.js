@@ -1,8 +1,15 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import cookieParser from "cookie-parser";
+import TokenBlacklist from "../models/blacklist.js";
 
-//Resiter a new user
+/**
+ *
+ * @name registerUser
+ * @description register a new user, expects username,email and password in the request body
+ * @access public
+ */
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -14,7 +21,7 @@ export const registerUser = async (req, res) => {
     }
     if (password.length < 6) {
       return res.status(400).json({
-        message: "Password must be at least 8 characters long",
+        message: "Password must be at least 6 characters long",
       });
     }
     const normalizedEmail = email.trim().toLowerCase();
@@ -53,8 +60,12 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-// Log in an existing user
 
+/**
+ * @name loginUser
+ * @description login a user , expects email and password in the request body
+ * @access public
+ */
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -107,6 +118,39 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       message: "Server error during login",
+    });
+  }
+};
+
+/**
+ * @name logoutUser
+ * @description logout user and move the token in blacklist
+ * @access public
+ */
+
+export const logoutUser = async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+
+    if (token) {
+      await TokenBlacklist.create({ token });
+    }
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      message: "User logout successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error.message);
+
+    return res.status(500).json({
+      message: "Server error during logout",
     });
   }
 };
