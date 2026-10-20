@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, Info, CheckCircle2 } from "lucide-react";
-import { useApp } from "../context/AppContext.jsx";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+
+import { useAuth } from "../context/AuthContext.jsx";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { registerUser } = useApp();
+  const { register } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -63,7 +63,7 @@ export const RegisterPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setGeneralError("");
 
@@ -73,12 +73,22 @@ export const RegisterPage = () => {
 
     setIsSubmitting(true);
 
-    // Call context registerUser: safely stores session metadata only (never plain-text passwords!)
-    registerUser(fullName.trim(), email.trim());
+    try {
+      await register({
+        name: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
 
-    // Navigate to student dashboard or original destination
-    const destination = location.state?.from?.pathname || "/recommendations";
-    navigate(destination, { replace: true });
+      // Registration succeeded. Redirect to Login.
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setGeneralError(
+        error.message || "Registration failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -106,18 +116,6 @@ export const RegisterPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-[#1B231F] py-8 px-6 sm:px-8 rounded-xl border border-[#E5E7EB] dark:border-[#2D3A32] shadow-sm space-y-6">
-          {/* Frontend Demo Notice */}
-          <div className="p-3.5 rounded-lg bg-[#E5EEE7] dark:bg-[#222D26] border border-[#d2e2d5] dark:border-[#2f3f35] text-xs text-[#252A27] dark:text-[#D1D5DB] space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-[#276749] dark:text-[#84CCA0]">
-              <Info className="w-4 h-4 shrink-0" />
-              <span>Frontend Demonstration Mode</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-[#6B7280] dark:text-[#9CA3AF]">
-              Account creation is simulated locally. No real credentials or
-              plain-text passwords are saved to disk or server.
-            </p>
-          </div>
-
           {/* General Error Alert */}
           {generalError && (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">

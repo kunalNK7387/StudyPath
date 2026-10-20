@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sun, Moon, Menu, X } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext.jsx";
-import { useApp } from "../../context/AppContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { LogoutConfirmModal } from "./LogoutConfirmModal.jsx";
 
 export const Navbar = () => {
   const { toggleTheme, isDark } = useTheme();
-  const { user, logoutUser } = useApp();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,16 +32,22 @@ export const Navbar = () => {
   };
 
   const handleConfirmLogout = async () => {
-    setShowLogoutModal(false);
-    await logoutUser();
-    // Redirect to login page with clear state message
-    navigate("/login", {
-      replace: true,
-      state: {
-        loggedOut: true,
-        message: "You have logged out successfully.",
-      },
-    });
+    try {
+      await logout();
+
+      setShowLogoutModal(false);
+      setMobileMenuOpen(false);
+
+      navigate("/login", {
+        replace: true,
+        state: {
+          loggedOut: true,
+          message: "You have logged out successfully.",
+        },
+      });
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+    }
   };
 
   return (
@@ -82,7 +88,7 @@ export const Navbar = () => {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Desktop Auth Controls */}
               <div className="hidden sm:flex items-center gap-2">
-                {user?.isAuthenticated ? (
+                {isAuthenticated ? (
                   <div className="flex items-center gap-2">
                     <Link
                       to="/recommendations"
@@ -92,7 +98,7 @@ export const Navbar = () => {
                           : "border-[#E5E7EB] dark:border-[#2D3A32] text-[#252A27] dark:text-[#F1F3F1] hover:bg-[#FAF9F6] dark:hover:bg-[#141A16]"
                       }`}
                     >
-                      My Results ({user.name.split(" ")[0]})
+                      My Results ({user?.name?.split(" ")[0] || "Student"})
                     </Link>
                     <button
                       type="button"
@@ -182,14 +188,14 @@ export const Navbar = () => {
             })}
 
             <div className="pt-2 mt-2 border-t border-[#E5E7EB] dark:border-[#2D3A32] space-y-1">
-              {user?.isAuthenticated ? (
+              {isAuthenticated ? (
                 <>
                   <Link
                     to="/recommendations"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-3 py-2 rounded-lg text-sm font-medium text-[#276749] dark:text-[#84CCA0] hover:bg-[#E5EEE7] dark:hover:bg-[#222D26]"
                   >
-                    My Results ({user.name})
+                    My Results ({user?.name || "Student"})
                   </Link>
                   <button
                     type="button"

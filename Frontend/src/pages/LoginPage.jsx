@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Info,
-  Check,
-  CheckCircle2,
-} from "lucide-react";
-import { useApp } from "../context/AppContext.jsx";
+import { Eye, EyeOff, AlertCircle, Info, CheckCircle2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginUser } = useApp();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,7 +56,7 @@ export const LoginPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
@@ -74,37 +67,27 @@ export const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Manage Remember Me preference (email only - never store passwords in storage!)
+      // Remember email only, never the password
       if (rememberMe) {
         localStorage.setItem("studypath_remembered_email", email.trim());
       } else {
         localStorage.removeItem("studypath_remembered_email");
       }
-    } catch {
-      // Safe fallback
+
+      // Call the real Express login API
+      await login({
+        email: email.trim(),
+        password,
+      });
+
+      const destination = location.state?.from?.pathname || "/recommendations";
+
+      navigate(destination, { replace: true });
+    } catch (error) {
+      setErrorMessage(error.message || "Login failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Determine student display name from email or default demo name
-    const emailPrefix = email.split("@")[0] || "Student";
-    const formattedName = emailPrefix
-      .replace(/[._]/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-
-    // Complete frontend demonstration login (safe, no plain-text passwords stored)
-    loginUser(formattedName, email.trim());
-    const destination = location.state?.from?.pathname || "/recommendations";
-    navigate(destination, { replace: true });
-  };
-
-  // Quick 1-click student demo sign-in for evaluator convenience
-  const handleDemoSignIn = () => {
-    setEmail("aarav.sharma@example.com");
-    setPassword("DemoPass2026!");
-    setErrorMessage("");
-    setFieldErrors({});
-    loginUser("Aarav Sharma", "aarav.sharma@example.com");
-    const destination = location.state?.from?.pathname || "/recommendations";
-    navigate(destination, { replace: true });
   };
 
   const loggedOutMessage = location.state?.loggedOut
@@ -156,25 +139,6 @@ export const LoginPage = () => {
             </div>
           )}
 
-          {/* Transparent Frontend Demo Notice */}
-          <div className="p-3.5 rounded-lg bg-[#E5EEE7] dark:bg-[#222D26] border border-[#d2e2d5] dark:border-[#2f3f35] text-xs text-[#252A27] dark:text-[#D1D5DB] space-y-1.5">
-            <div className="flex items-center gap-1.5 font-bold text-[#276749] dark:text-[#84CCA0]">
-              <Info className="w-4 h-4 shrink-0" />
-              <span>Frontend Demonstration Mode</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-[#6B7280] dark:text-[#9CA3AF]">
-              Authentication is simulated locally in this preview. Passwords are
-              never stored in localStorage or transmitted.
-            </p>
-            <button
-              type="button"
-              onClick={handleDemoSignIn}
-              className="mt-1 w-full py-1.5 px-3 rounded-md bg-white dark:bg-[#1B231F] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs font-semibold text-[#276749] dark:text-[#84CCA0] hover:bg-[#FAF9F6] dark:hover:bg-[#141A16] transition-colors cursor-pointer"
-            >
-              One-Click Demo Student Sign-In
-            </button>
-          </div>
-
           {/* Top Error Alert if any */}
           {errorMessage && (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
@@ -197,9 +161,8 @@ export const LoginPage = () => {
                 </button>
               </div>
               <p className="text-[11px] leading-relaxed">
-                Password recovery is not implemented in this demo mode. You can
-                log in using any test credentials or create a new student
-                account on the Register page.
+                Password recovery is not available yet. Please use your
+                registered email and password, or create a new account.
               </p>
             </div>
           )}
