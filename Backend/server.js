@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectToDB from "./src/config/database.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import cookieParser from "cookie-parser";
+import authMiddleware from "./src/middleware/authMiddleware.js";
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,13 @@ app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("Study app is working");
+});
+
+app.get("/api/protected", authMiddleware, (req, res) => {
+  res.status(200).json({
+    message: "You accessed a protected route!",
+    user: req.user,
+  });
 });
 
 // Start server and handle errors

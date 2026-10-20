@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
-import cookieParser from "cookie-parser";
 import TokenBlacklist from "../models/blacklist.js";
 
 /**
@@ -87,7 +86,7 @@ export const loginUser = async (req, res) => {
         message: "Invalid email or password",
       });
     }
-    const isValidPassword = await bcrypt.hash(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return res.status(401).json({
@@ -103,6 +102,13 @@ export const loginUser = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
 
     return res.status(200).json({
       message: "Login Succesfully.",
