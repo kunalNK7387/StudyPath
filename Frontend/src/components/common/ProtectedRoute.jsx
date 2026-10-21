@@ -1,13 +1,22 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useApp } from "../../context/AppContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export const ProtectedRoute = ({ children }) => {
-  const { user } = useApp();
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  if (!user || !user.isAuthenticated) {
-    // Preserve intended destination path so user returns there after signing in
+  // Wait until the session check finishes
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Checking your login...</p>
+      </div>
+    );
+  }
+
+  // Redirect unauthenticated users to login
+  if (!isAuthenticated || !user) {
     return (
       <Navigate
         to="/login"

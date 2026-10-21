@@ -5,6 +5,7 @@ import connectToDB from "./src/config/database.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import cookieParser from "cookie-parser";
 import authMiddleware from "./src/middleware/authMiddleware.js";
+import aiRoutes from "./src/routes/ai.routes.js";
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,8 @@ app.get("/api/protected", authMiddleware, (req, res) => {
     user: req.user,
   });
 });
+
+app.use("/api/ai", aiRoutes);
 
 // Start server and handle errors
 const startServer = async () => {
