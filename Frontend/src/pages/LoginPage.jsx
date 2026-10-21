@@ -75,14 +75,11 @@ export const LoginPage = () => {
       }
 
       // Call the real Express login API
-      await login({
-        email: email.trim(),
-        password,
-      });
 
-      const destination = location.state?.from?.pathname || "/recommendations";
+      await login({ email: email.trim(), password });
 
-      navigate(destination, { replace: true });
+      // Always show the profile assessment after login.
+      navigate("/assessment", { replace: true });
     } catch (error) {
       setErrorMessage(error.message || "Login failed. Please try again.");
     } finally {

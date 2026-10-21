@@ -4,25 +4,23 @@ import { ArrowRight } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 
 export const ProfileAssessmentPage = () => {
-  const { profile, setProfile, showToast, loadSampleProfile } = useApp();
+  const { setProfile, showToast } = useApp();
+
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState(() => {
-    if (profile) return profile;
-    return {
-      fullName: "Aarav Sharma",
-      nationality: "Indian",
-      currentEducation: "B.Tech / B.E. (Completed or Final Year)",
-      academicMarks: "8.4 CGPA",
-      desiredDegree: "Master's",
-      desiredCourse: "Computer Science / Data Engineering",
-      annualBudgetINR: 1500000, // ₹15 Lakhs
-      englishTest: "IELTS (6.5 - 7.5)",
-      englishScore: "7.0",
-      careerGoal: "Software Engineer in Europe / North America",
-      targetIntake: "Fall 2026",
-      preferredCountries: ["germany", "canada", "ireland"],
-    };
+  const [formData, setFormData] = useState({
+    fullName: "",
+    nationality: "",
+    currentEducation: "",
+    academicMarks: "",
+    desiredDegree: "",
+    desiredCourse: "",
+    annualBudgetINR: 600000,
+    englishTest: "",
+    englishScore: "",
+    careerGoal: "",
+    targetIntake: "",
+    preferredCountries: [],
   });
 
   const [errors, setErrors] = useState({});
@@ -38,42 +36,6 @@ export const ProfileAssessmentPage = () => {
     }
   };
 
-  const handleFillSample = (type) => {
-    if (type === "stem") {
-      setFormData({
-        fullName: "Aarav Sharma",
-        nationality: "Indian",
-        currentEducation: "B.Tech in Computer Science",
-        academicMarks: "8.4 CGPA",
-        desiredDegree: "Master's",
-        desiredCourse: "Computer Science & Software Systems",
-        annualBudgetINR: 1500000,
-        englishTest: "IELTS (6.5 - 7.5)",
-        englishScore: "7.5",
-        careerGoal: "Software Engineer & Cloud Architect",
-        targetIntake: "Fall 2026",
-        preferredCountries: ["germany", "ireland"],
-      });
-      showToast("Loaded Aarav’s sample profile", "info");
-    } else {
-      setFormData({
-        fullName: "Pooja Patel",
-        nationality: "Indian",
-        currentEducation: "B.Com / BBA (Finance/Commerce)",
-        academicMarks: "76%",
-        desiredDegree: "Master's",
-        desiredCourse: "Finance & International Business",
-        annualBudgetINR: 2200000,
-        englishTest: "IELTS (6.5 - 7.5)",
-        englishScore: "7.0",
-        careerGoal: "Financial Analyst / Management Consultant",
-        targetIntake: "Fall 2026",
-        preferredCountries: ["uk", "ireland", "canada"],
-      });
-      showToast("Loaded Pooja’s sample profile", "info");
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const errs = {};
@@ -82,6 +44,13 @@ export const ProfileAssessmentPage = () => {
       errs.academicMarks = "Please enter your marks or CGPA";
     if (!formData.desiredCourse.trim())
       errs.desiredCourse = "Please enter your desired course";
+    if (!formData.desiredCourse.trim()) {
+      errs.desiredCourse = "Please enter your desired course";
+    }
+
+    if (!formData.desiredDegree.trim()) {
+      errs.desiredDegree = "Please select your desired degree";
+    }
     if (!formData.careerGoal.trim())
       errs.careerGoal = "Please enter your career goal";
 
@@ -117,29 +86,6 @@ export const ProfileAssessmentPage = () => {
           </p>
         </div>
 
-        {/* Quick Fill Pre-sets */}
-        <div className="p-4 rounded-lg bg-[#E5EEE7] dark:bg-[#222D26] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <span className="text-[#252A27] dark:text-[#F1F3F1] font-medium">
-            Want to fill quickly? Choose a sample profile:
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleFillSample("stem")}
-              className="px-3 py-1.5 rounded bg-white dark:bg-[#1B231F] text-[#276749] dark:text-[#84CCA0] font-semibold border border-[#E5E7EB] dark:border-[#2D3A32] hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              Aarav (B.Tech, ₹15L)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillSample("commerce")}
-              className="px-3 py-1.5 rounded bg-white dark:bg-[#1B231F] text-[#276749] dark:text-[#84CCA0] font-semibold border border-[#E5E7EB] dark:border-[#2D3A32] hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              Pooja (B.Com, ₹22L)
-            </button>
-          </div>
-        </div>
-
         {/* Single Page Form */}
         <form
           onSubmit={handleSubmit}
@@ -152,9 +98,10 @@ export const ProfileAssessmentPage = () => {
             </label>
             <input
               type="text"
+              required
               value={formData.fullName}
               onChange={(e) => handleChange("fullName", e.target.value)}
-              placeholder="e.g. Aarav Sharma"
+              placeholder="Enter your full name"
               className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32] bg-[#FAF9F6] dark:bg-[#141A16] text-[#252A27] dark:text-[#F1F3F1] text-sm focus:outline-none focus:ring-2 focus:ring-[#276749]"
             />
             {errors.fullName && (
@@ -225,6 +172,32 @@ export const ProfileAssessmentPage = () => {
             {errors.desiredCourse && (
               <p className="text-xs text-red-600 mt-1">
                 {errors.desiredCourse}
+              </p>
+            )}
+          </div>
+
+          {/* Desired Degree */}
+          <div>
+            <label className="block text-sm font-semibold mb-1">
+              Desired Degree
+            </label>
+
+            <select
+              required
+              value={formData.desiredDegree}
+              onChange={(e) => handleChange("desiredDegree", e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32] bg-[#FAF9F6] dark:bg-[#141A16] text-[#252A27] dark:text-[#F1F3F1] text-sm"
+            >
+              <option value="">Select your desired degree</option>
+              <option value="Bachelor's">Bachelor's</option>
+              <option value="Master's">Master's</option>
+              <option value="PhD">PhD</option>
+              <option value="Diploma">Diploma</option>
+            </select>
+
+            {errors.desiredDegree && (
+              <p className="text-xs text-red-600 mt-1">
+                {errors.desiredDegree}
               </p>
             )}
           </div>

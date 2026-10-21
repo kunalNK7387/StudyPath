@@ -26,10 +26,17 @@ export const getStudyRecommendations = async (req, res) => {
   } catch (error) {
     console.error("AI recommendation error:", error);
 
+    if (error.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "AI request limit reached. Please wait a minute and try again.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message:
-        "Unable to generate recommendations. Please check the backend terminal.",
+      message: "Unable to generate recommendations.",
     });
   }
 };

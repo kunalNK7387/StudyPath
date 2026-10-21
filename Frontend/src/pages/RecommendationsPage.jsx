@@ -14,13 +14,10 @@ import {
   Compass,
   CheckSquare,
   Sparkles,
+  LoaderCircle,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
-import {
-  generateRecommendations,
-  calculateLocalRecommendations,
-} from "../services/recommendationService.js";
-import { COUNTRIES_DATA } from "../data/countriesData.js";
+import { generateRecommendations } from "../services/recommendationService.js";
 
 export const RecommendationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,42 +53,54 @@ export const RecommendationsPage = () => {
   const [expandedCountryId, setExpandedCountryId] = useState(null);
 
   // Cost Calculator state
-  const [calcCountryId, setCalcCountryId] = useState("germany");
+  const [calcCountryId, setCalcCountryId] = useState("");
   const [calcDuration, setCalcDuration] = useState(2);
 
   // Application Plan filter state
   const [taskFilter, setTaskFilter] = useState("All");
 
+  //Loading page
+  const [error, setError] = useState("");
+
   useEffect(() => {
     let isMounted = true;
+
     async function fetchMatches() {
       setLoading(true);
-      const studentProfile = profile || {
-        fullName: "Student",
-        nationality: "Indian",
-        currentEducation: "B.Tech in Computer Science",
-        academicMarks: "8.4 CGPA",
-        desiredDegree: "Master's",
-        desiredCourse: "Computer Science & AI",
-        annualBudgetINR: 1500000,
-        englishTest: "IELTS (6.5 - 7.5)",
-        careerGoal: "Software Engineer",
-        targetIntake: "Fall 2026",
-        preferredCountries: ["germany", "canada", "ireland"],
-      };
+      setError("");
 
       try {
-        const results = await generateRecommendations(studentProfile);
-        if (isMounted) setRecommendations(results);
-      } catch {
-        if (isMounted)
-          setRecommendations(calculateLocalRecommendations(studentProfile));
+        if (!profile) {
+          throw new Error("Please complete your student assessment first.");
+        }
+
+        if (!profile.desiredCourse?.trim() || !profile.desiredDegree?.trim()) {
+          throw new Error(
+            "Desired course and degree are required. Please complete your assessment.",
+          );
+        }
+
+        const results = await generateRecommendations(profile);
+
+        if (isMounted) {
+          setRecommendations(results);
+        }
+      } catch (error) {
+        console.error("Failed to load AI recommendations:", error);
+
+        if (isMounted) {
+          setRecommendations([]);
+          setError(error.message || "Unable to load recommendations.");
+        }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchMatches();
+
     return () => {
       isMounted = false;
     };
@@ -106,107 +115,51 @@ export const RecommendationsPage = () => {
 
   const getCountryDetails = (countryId) => {
     return (
-      COUNTRIES_DATA.find(
-        (c) => c.id.toLowerCase() === countryId?.toLowerCase(),
-      ) || COUNTRIES_DATA[0]
+      recommendations.find((country) => country.countryId === countryId) || null
     );
   };
 
   const bestFit = recommendations[0] || null;
   const alternatives = recommendations.slice(1, 3);
-  const bestFitCountryData = bestFit
-    ? getCountryDetails(bestFit.countryId)
-    : COUNTRIES_DATA[0];
+  const bestFitCountryData = bestFit;
 
   // Explorer filter logic
-  const filteredCountries = COUNTRIES_DATA.filter((c) => {
-    if (
-      countrySearch &&
-      !c.name.toLowerCase().includes(countrySearch.toLowerCase())
-    ) {
-      return false;
-    }
-    if (tuitionFilter !== "All" && c.tuitionModel !== tuitionFilter) {
-      return false;
-    }
-    return true;
+  const filteredCountries = recommendations.filter((country) => {
+    const matchesSearch = country.countryName
+      .toLowerCase()
+      .includes(countrySearch.toLowerCase());
+
+    const matchesTuition =
+      tuitionFilter === "All" || country.tuitionModel === tuitionFilter;
+
+    return matchesSearch && matchesTuition;
   });
 
   // Calculator computations
   const selectedCalcCountry = getCountryDetails(calcCountryId);
-  const baseCosts = {
-    germany: {
-      tuition: 500,
-      accommodationMonthly: 450,
-      foodMonthly: 250,
-      transportMonthly: 40,
-      otherMonthly: 160,
-    },
-    canada: {
-      tuition: 26000,
-      accommodationMonthly: 900,
-      foodMonthly: 400,
-      transportMonthly: 110,
-      otherMonthly: 250,
-    },
-    uk: {
-      tuition: 21000,
-      accommodationMonthly: 750,
-      foodMonthly: 280,
-      transportMonthly: 80,
-      otherMonthly: 200,
-    },
-    australia: {
-      tuition: 36000,
-      accommodationMonthly: 1200,
-      foodMonthly: 450,
-      transportMonthly: 130,
-      otherMonthly: 280,
-    },
-    usa: {
-      tuition: 34000,
-      accommodationMonthly: 950,
-      foodMonthly: 400,
-      transportMonthly: 100,
-      otherMonthly: 300,
-    },
-    ireland: {
-      tuition: 18000,
-      accommodationMonthly: 850,
-      foodMonthly: 320,
-      transportMonthly: 85,
-      otherMonthly: 220,
-    },
-    italy: {
-      tuition: 2000,
-      accommodationMonthly: 420,
-      foodMonthly: 250,
-      transportMonthly: 35,
-      otherMonthly: 150,
-    },
+
+  const formatINR = (amount) => {
+    const value = Number(amount);
+
+    if (amount === null || amount === undefined || amount === "") {
+      return "Not provided by AI";
+    }
+
+    if (!Number.isFinite(value)) {
+      return "Not provided by AI";
+    }
+
+    return `₹${value.toLocaleString("en-IN")}`;
   };
 
-  const costData = baseCosts[selectedCalcCountry.id] || baseCosts.germany;
-  const rate =
-    exchangeRates[selectedCalcCountry.currency] ||
-    selectedCalcCountry.exchangeRateToINR ||
-    91.5;
+  const annualCostINR = Number(
+    selectedCalcCountry?.estimatedAnnualINR?.replace(/[₹,]/g, ""),
+  );
 
-  const annualAccommodationLocal = costData.accommodationMonthly * 12;
-  const annualFoodLocal = costData.foodMonthly * 12;
-  const annualTransportLocal = costData.transportMonthly * 12;
-  const annualOtherLocal = costData.otherMonthly * 12;
-  const annualLivingLocal =
-    annualAccommodationLocal +
-    annualFoodLocal +
-    annualTransportLocal +
-    annualOtherLocal;
-  const totalAnnualLocal = costData.tuition + annualLivingLocal;
-
-  const toLakhs = (amtLocal) => {
-    const inr = amtLocal * rate;
-    return `₹${(inr / 100000).toFixed(2)} Lakhs`;
-  };
+  const totalCourseCost =
+    Number.isFinite(annualCostINR) && annualCostINR > 0
+      ? annualCostINR * calcDuration
+      : null;
 
   // Planner stats
   const totalTasks = tasks.length;
@@ -229,16 +182,18 @@ export const RecommendationsPage = () => {
               Your Recommendations & Application Plan
             </h1>
             <p className="text-xs sm:text-sm text-[#6B7280] dark:text-[#9CA3AF] mt-0.5">
-              Course:{" "}
-              <b>{profile ? profile.desiredCourse : "Computer Science"}</b> •
-              Marks: <b>{profile?.academicMarks || "8.4 CGPA"}</b> • Budget:{" "}
+              Course: <b>{profile?.desiredCourse || "Not provided"}</b> • Marks:{" "}
+              <b>{profile?.academicMarks || "Not provided"}</b> • Budget:{" "}
               <b>
-                ₹
-                {(profile?.annualBudgetINR
-                  ? profile.annualBudgetINR / 100000
-                  : 15
-                ).toFixed(0)}{" "}
-                Lakhs/year
+                {profile?.annualBudgetINR != null &&
+                profile.annualBudgetINR !== "" ? (
+                  <>
+                    ₹{(Number(profile.annualBudgetINR) / 100000).toFixed(1)}
+                    {" Lakhs/year"}
+                  </>
+                ) : (
+                  "Not provided"
+                )}
               </b>
             </p>
           </div>
@@ -279,7 +234,7 @@ export const RecommendationsPage = () => {
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Explore All 7 Countries</span>
+            <span>Explore Recomended Countries</span>
           </button>
 
           <button
@@ -311,9 +266,8 @@ export const RecommendationsPage = () => {
           </button>
         </div>
 
-        {/* ======================================================== */}
-        {/* TAB 1: RECOMMENDED MATCHES                               */}
-        {/* ======================================================== */}
+        {/* TAB 1: RECOMMENDED MATCHES  */}
+
         {activeTab === "matches" && (
           <div className="space-y-8 animate-fade-in">
             {/* Non-Guarantee Notice */}
@@ -328,19 +282,76 @@ export const RecommendationsPage = () => {
               </div>
             </div>
 
+            {/* Error Message */}
+            {!loading && error && (
+              <div
+                className="rounded-lg border border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-950/30"
+                role="alert"
+              >
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="h-5 w-5 shrink-0 text-red-600" />
+
+                  <div>
+                    <h3 className="font-semibold text-red-700 dark:text-red-300">
+                      Unable to load recommendations
+                    </h3>
+
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">
+                      {error}
+                    </p>
+
+                    <Link
+                      to="/assessment"
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#276749] px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Complete Assessment
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
-              <div className="p-12 text-center bg-white dark:bg-[#1B231F] rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32]">
+              <div
+                className="flex flex-col items-center justify-center gap-4 p-12 text-center bg-white dark:bg-[#1B231F] rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32]"
+                role="status"
+                aria-live="polite"
+              >
+                <LoaderCircle className="h-10 w-10 animate-spin text-[#276749] dark:text-[#84CCA0]" />
+
                 <p className="text-base font-bold text-[#276749] dark:text-[#84CCA0]">
-                  Analyzing your best-fit study destination...
+                  Finding your best study destinations...
                 </p>
-                <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-1">
-                  Matching academic marks, annual budget in INR, and post-study
-                  visa rules.
+
+                <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
+                  Analyzing your academic profile, budget, scholarships, and
+                  study options.
                 </p>
               </div>
             ) : (
               <div className="space-y-8">
                 {/* 1. Best Fit Country */}
+                {!bestFit && (
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1B231F] p-8 text-center">
+                    <h3 className="text-lg font-bold mb-2">
+                      No recommendations available
+                    </h3>
+
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      Complete your student assessment or try generating your
+                      recommendations again.
+                    </p>
+
+                    <Link
+                      to="/assessment"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#276749] px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Review Assessment
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
                 {bestFit && (
                   <div className="bg-white dark:bg-[#1B231F] rounded-lg border-2 border-[#276749] p-6 sm:p-8 space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E5E7EB] dark:border-[#2D3A32]">
@@ -369,7 +380,9 @@ export const RecommendationsPage = () => {
 
                       <div className="text-left sm:text-right">
                         <span className="text-2xl font-black text-[#276749] dark:text-[#84CCA0]">
-                          {bestFit.matchScore}%
+                          {bestFit.matchScore != null
+                            ? `${bestFit.matchScore}%`
+                            : "AI Recommended"}
                         </span>
                         <span className="block text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
                           Profile Compatibility
@@ -384,10 +397,12 @@ export const RecommendationsPage = () => {
                           Estimated Annual Tuition Fee:
                         </div>
                         <div className="text-sm font-bold text-[#252A27] dark:text-[#F1F3F1] mt-0.5">
-                          {bestFitCountryData.avgAnnualTuitionINR}
+                          {bestFitCountryData.avgAnnualTuitionINR ||
+                            "Not provided by AI"}
                         </div>
                         <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-0.5">
-                          Tuition Model: {bestFitCountryData.tuitionModel}
+                          {bestFitCountryData.tuitionModel ||
+                            "Not provided by AI"}
                         </div>
                       </div>
 
@@ -396,11 +411,13 @@ export const RecommendationsPage = () => {
                           Estimated Annual Living Cost:
                         </div>
                         <div className="text-sm font-bold text-[#252A27] dark:text-[#F1F3F1] mt-0.5">
-                          {bestFitCountryData.avgAnnualLivingINR}
+                          {bestFitCountryData.avgAnnualLivingINR ||
+                            "Not provided by AI"}
                         </div>
                         <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-0.5">
                           Post-Study Work Visa:{" "}
-                          {bestFitCountryData.postStudyWorkVisa}
+                          {bestFitCountryData.postStudyWorkVisa ||
+                            "Not provided by AI"}
                         </div>
                       </div>
                     </div>
@@ -464,7 +481,7 @@ export const RecommendationsPage = () => {
                             Recommended Universities in {bestFit.countryName}:
                           </h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {bestFitCountryData.topUniversities.map(
+                            {(bestFitCountryData.topUniversities || []).map(
                               (uni, idx) => (
                                 <div
                                   key={idx}
@@ -538,7 +555,9 @@ export const RecommendationsPage = () => {
                                   {alt.flag}
                                 </span>
                                 <span className="text-sm font-bold text-[#276749] dark:text-[#84CCA0]">
-                                  {alt.matchScore}% Match
+                                  {alt.matchScore != null
+                                    ? `${alt.matchScore}% Match`
+                                    : "AI Recommended"}
                                 </span>
                               </div>
 
@@ -656,9 +675,8 @@ export const RecommendationsPage = () => {
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* TAB 2: EXPLORE ALL 7 COUNTRIES                          */}
-        {/* ======================================================== */}
+        {/* TAB 2: EXPLORE ALL 7 COUNTRIES */}
+
         {activeTab === "explore" && (
           <div className="space-y-6 animate-fade-in">
             {/* Search & Filter Bar */}
@@ -698,8 +716,8 @@ export const RecommendationsPage = () => {
             {/* Country Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredCountries.map((c) => {
-                const isShortlisted = isCountryShortlisted(c.id);
-                const isExpanded = expandedCountryId === c.id;
+                const isShortlisted = isCountryShortlisted(c.countryId);
+                const isExpanded = expandedCountryId === c.countryId;
 
                 return (
                   <div
@@ -801,7 +819,7 @@ export const RecommendationsPage = () => {
                               Top Universities:
                             </span>
                             <div className="space-y-1.5">
-                              {c.topUniversities.map((uni, idx) => (
+                              {(c.topUniversities || []).map((uni, idx) => (
                                 <div
                                   key={idx}
                                   className="flex items-center justify-between"
@@ -865,160 +883,105 @@ export const RecommendationsPage = () => {
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* TAB 3: ESTIMATED YEARLY COSTS (IN INR)                   */}
-        {/* ======================================================== */}
+        {/* TAB 3: ESTIMATED YEARLY COSTS (IN INR)*/}
+
         {activeTab === "calculator" && (
           <div className="space-y-6 animate-fade-in">
-            <div className="p-5 sm:p-6 rounded-lg bg-white dark:bg-[#1B231F] border border-[#E5E7EB] dark:border-[#2D3A32] space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold text-[#252A27] dark:text-[#F1F3F1]">
-                    Yearly Cost Breakdown in Indian Rupees (₹)
-                  </h2>
-                  <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-0.5">
-                    Converted at real foreign exchange rate: 1{" "}
-                    {selectedCalcCountry.currency} = ₹{rate} (As of October
-                    2026).
+            <div className="p-5 sm:p-6 rounded-lg bg-white dark:bg-[#1B231F] border border-[#E5E7EB] dark:border-[#2D3A32] space-y-5">
+              <h2 className="text-xl font-bold">Estimated Study Costs (INR)</h2>
+
+              <div>
+                <label
+                  htmlFor="cost-country-select"
+                  className="block text-xs font-semibold mb-2"
+                >
+                  Select Country
+                </label>
+
+                <select
+                  id="cost-country-select"
+                  value={calcCountryId}
+                  onChange={(e) => setCalcCountryId(e.target.value)}
+                  className="w-full sm:w-72 px-3 py-2 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-sm"
+                >
+                  <option value="">Choose a country</option>
+
+                  {recommendations.map((country) => (
+                    <option key={country.countryId} value={country.countryId}>
+                      {country.flag} {country.countryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedCalcCountry ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32]">
+                      <p className="text-xs text-gray-500">
+                        Estimated total per year
+                      </p>
+                      <p className="text-xl font-bold mt-2">
+                        {selectedCalcCountry.estimatedAnnualINR ||
+                          "Not provided by AI"}
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32]">
+                      <p className="text-xs text-gray-500">Course duration</p>
+
+                      <div className="flex gap-2 mt-2">
+                        {[1, 2].map((years) => (
+                          <button
+                            key={years}
+                            type="button"
+                            onClick={() => setCalcDuration(years)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-semibold ${
+                              calcDuration === years
+                                ? "bg-[#276749] text-white"
+                                : "border border-gray-300 dark:border-gray-600"
+                            }`}
+                          >
+                            {years} Year{years > 1 ? "s" : ""}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-[#E5EEE7] dark:bg-[#222D26]">
+                    <p className="text-sm font-semibold">
+                      Estimated cost for {calcDuration} year
+                      {calcDuration > 1 ? "s" : ""}
+                    </p>
+
+                    <p className="text-2xl font-extrabold text-[#276749] dark:text-[#84CCA0] mt-2">
+                      {totalCourseCost !== null
+                        ? formatINR(totalCourseCost)
+                        : "Not provided by AI"}
+                    </p>
+
+                    <p className="text-xs mt-2">
+                      This estimate multiplies the AI-provided annual cost by
+                      the selected course duration. Actual costs may vary.
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-gray-500">
+                    Country: {selectedCalcCountry.countryName}
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="cost-country-select"
-                    className="text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF]"
-                  >
-                    Country:
-                  </label>
-                  <select
-                    id="cost-country-select"
-                    value={calcCountryId}
-                    onChange={(e) => setCalcCountryId(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs font-semibold text-[#252A27] dark:text-[#F1F3F1] focus:outline-none focus:ring-2 focus:ring-[#276749]"
-                  >
-                    {COUNTRIES_DATA.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.flag} {c.name} ({c.currency})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Course Duration Selector */}
-              <div className="flex items-center gap-3 pt-2">
-                <span className="text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF]">
-                  Course Duration:
-                </span>
-                {[1, 2].map((years) => (
-                  <button
-                    key={years}
-                    type="button"
-                    onClick={() => setCalcDuration(years)}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                      calcDuration === years
-                        ? "bg-[#276749] text-white"
-                        : "bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-[#6B7280]"
-                    }`}
-                  >
-                    {years} Year{years > 1 ? "s" : ""}
-                  </button>
-                ))}
-              </div>
-
-              {/* Cost Items Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-                <div className="p-3.5 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs space-y-1">
-                  <span className="text-[#6B7280] dark:text-[#9CA3AF] block">
-                    1. Tuition Fees
-                  </span>
-                  <span className="font-bold text-sm text-[#252A27] dark:text-[#F1F3F1] block">
-                    {toLakhs(costData.tuition)}
-                  </span>
-                  <span className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
-                    {selectedCalcCountry.currencySymbol}
-                    {costData.tuition.toLocaleString()} / year
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs space-y-1">
-                  <span className="text-[#6B7280] dark:text-[#9CA3AF] block">
-                    2. Accommodation
-                  </span>
-                  <span className="font-bold text-sm text-[#252A27] dark:text-[#F1F3F1] block">
-                    {toLakhs(annualAccommodationLocal)}
-                  </span>
-                  <span className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
-                    {selectedCalcCountry.currencySymbol}
-                    {costData.accommodationMonthly}/month (Shared)
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs space-y-1">
-                  <span className="text-[#6B7280] dark:text-[#9CA3AF] block">
-                    3. Food & Groceries
-                  </span>
-                  <span className="font-bold text-sm text-[#252A27] dark:text-[#F1F3F1] block">
-                    {toLakhs(annualFoodLocal)}
-                  </span>
-                  <span className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
-                    {selectedCalcCountry.currencySymbol}
-                    {costData.foodMonthly}/month
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-lg bg-[#FAF9F6] dark:bg-[#141A16] border border-[#E5E7EB] dark:border-[#2D3A32] text-xs space-y-1">
-                  <span className="text-[#6B7280] dark:text-[#9CA3AF] block">
-                    4. Transport & Other
-                  </span>
-                  <span className="font-bold text-sm text-[#252A27] dark:text-[#F1F3F1] block">
-                    {toLakhs(annualTransportLocal + annualOtherLocal)}
-                  </span>
-                  <span className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
-                    {selectedCalcCountry.currencySymbol}
-                    {costData.transportMonthly + costData.otherMonthly}/month
-                  </span>
-                </div>
-              </div>
-
-              {/* Total Summary Banner */}
-              <div className="p-4 sm:p-5 rounded-lg bg-[#E5EEE7] dark:bg-[#222D26] border border-[#276749]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide block">
-                    Estimated Total Per Year ({selectedCalcCountry.name})
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-extrabold text-[#276749] dark:text-[#84CCA0] block mt-0.5">
-                    {toLakhs(totalAnnualLocal)}
-                  </span>
-                  <span className="text-xs text-[#252A27] dark:text-[#D1D5DB] mt-1 block">
-                    Total for {calcDuration} Year{calcDuration > 1 ? "s" : ""}{" "}
-                    Course: <b>{toLakhs(totalAnnualLocal * calcDuration)}</b>
-                  </span>
-                </div>
-
-                <div className="text-left sm:text-right text-xs text-[#6B7280] dark:text-[#9CA3AF] space-y-1">
-                  <div>
-                    Model: <b>{selectedCalcCountry.tuitionModel}</b>
-                  </div>
-                  <div>
-                    Post-Study Work:{" "}
-                    <b>{selectedCalcCountry.postStudyWorkVisa}</b>
-                  </div>
-                  <Link
-                    to="/scholarships"
-                    className="inline-block mt-1 font-bold text-[#276749] dark:text-[#84CCA0] hover:underline"
-                  >
-                    View Matching Scholarships →
-                  </Link>
-                </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Select a country to view its estimated study cost.
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* TAB 4: MY APPLICATION PLAN (CHECKLIST)                   */}
-        {/* ======================================================== */}
+        {/* TAB 4: MY APPLICATION PLAN (CHECKLIST) */}
+
         {activeTab === "planner" && (
           <div className="space-y-6 animate-fade-in">
             <div className="p-5 sm:p-6 rounded-lg bg-white dark:bg-[#1B231F] border border-[#E5E7EB] dark:border-[#2D3A32] space-y-4">
@@ -1050,7 +1013,10 @@ export const RecommendationsPage = () => {
                   Completed
                 </span>
                 <span className="font-bold">
-                  {Math.round((completedTasks / totalTasks) * 100)}% Done
+                  {totalTasks > 0
+                    ? Math.round((completedTasks / totalTasks) * 100)
+                    : 0}
+                  % Done
                 </span>
               </div>
 

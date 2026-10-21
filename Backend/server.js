@@ -1,28 +1,28 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+
 import connectToDB from "./src/config/database.js";
 import authRoutes from "./src/routes/authRoutes.js";
-import cookieParser from "cookie-parser";
 import authMiddleware from "./src/middleware/authMiddleware.js";
 import aiRoutes from "./src/routes/ai.routes.js";
 
 dotenv.config();
+
 const app = express();
 
-connectToDB();
-
-//Middleware
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
-//Routes
+// Routes
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
@@ -38,7 +38,6 @@ app.get("/api/protected", authMiddleware, (req, res) => {
 
 app.use("/api/ai", aiRoutes);
 
-// Start server and handle errors
 const startServer = async () => {
   try {
     await connectToDB();
