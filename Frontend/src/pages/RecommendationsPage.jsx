@@ -28,7 +28,8 @@ export const RecommendationsPage = () => {
     tasks,
     toggleTaskStatus,
     resetTasks,
-    exchangeRates,
+    setRecommendedCountries,
+    setScholarships,
   } = useApp();
 
   // Tab state: 'matches' | 'explore' | 'calculator' | 'planner'
@@ -80,10 +81,12 @@ export const RecommendationsPage = () => {
           );
         }
 
-        const results = await generateRecommendations(profile);
+        const result = await generateRecommendations(profile);
 
         if (isMounted) {
-          setRecommendations(results);
+          setRecommendations(result.countries);
+          setRecommendedCountries(result.countries);
+          setScholarships(result.scholarships);
         }
       } catch (error) {
         console.error("Failed to load AI recommendations:", error);

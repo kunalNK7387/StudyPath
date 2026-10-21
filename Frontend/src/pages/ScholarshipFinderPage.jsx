@@ -6,47 +6,66 @@ import {
   CheckCircle2,
   Calendar,
 } from "lucide-react";
-import { SCHOLARSHIPS_DATA } from "../data/scholarshipsData.js";
+
 import { useApp } from "../context/AppContext.jsx";
 
 export const ScholarshipFinderPage = () => {
-  const { isScholarshipSaved, toggleSaveScholarship } = useApp();
+  const {
+    scholarships,
+    recommendedCountries,
+    isScholarshipSaved,
+    toggleSaveScholarship,
+  } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [selectedFunding, setSelectedFunding] = useState("All");
 
   const countries = [
     "All",
-    "Germany",
-    "United Kingdom",
-    "Canada",
-    "United States",
-    "Ireland",
-    "Italy",
-    "Australia",
-    "Global",
+    ...new Set(
+      [
+        ...(recommendedCountries || []).map(
+          (country) => country.countryName || country.name,
+        ),
+        ...(scholarships || []).map((scholarship) => scholarship.country),
+      ].filter(Boolean),
+    ),
   ];
   const fundingTypes = [
     "All",
-    "Fully Funded",
-    "Partial Tuition Waiver",
-    "Monthly Stipend",
+    ...new Set(
+      (scholarships || [])
+        .map((scholarship) => scholarship.fundingType)
+        .filter((type) => type && type !== "Needs verification"),
+    ),
   ];
 
-  const filteredScholarships = SCHOLARSHIPS_DATA.filter((s) => {
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      const matchName = s.name.toLowerCase().includes(term);
-      const matchProvider = s.provider.toLowerCase().includes(term);
-      const matchField = s.fieldOfStudy.some((f) =>
-        f.toLowerCase().includes(term),
-      );
-      if (!matchName && !matchProvider && !matchField) return false;
+  const filteredScholarships = (scholarships || []).filter((s) => {
+    const term = searchTerm.trim().toLowerCase();
+
+    if (term) {
+      const searchableText = [
+        s.name,
+        s.provider,
+        s.country,
+        s.scholarshipType,
+        ...(Array.isArray(s.eligibility) ? s.eligibility : []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      if (!searchableText.includes(term)) return false;
     }
-    if (selectedCountry !== "All" && s.country !== selectedCountry)
+
+    if (selectedCountry !== "All" && s.country !== selectedCountry) {
       return false;
-    if (selectedFunding !== "All" && s.fundingType !== selectedFunding)
+    }
+
+    if (selectedFunding !== "All" && s.fundingType !== selectedFunding) {
       return false;
+    }
+
     return true;
   });
 
@@ -62,8 +81,9 @@ export const ScholarshipFinderPage = () => {
             Scholarships for Indian Students
           </h1>
           <p className="mt-1 text-sm text-[#6B7280] dark:text-[#9CA3AF]">
-            Explore government and university scholarships with verified
-            benefits, eligibility rules, and official links.
+            Explore AI-recommended scholarships, eligibility requirements,
+            funding details, and official application links. Verify all
+            information with the scholarship provider before applying.
           </p>
         </div>
 
@@ -187,7 +207,10 @@ export const ScholarshipFinderPage = () => {
                     Eligibility Requirements:
                   </h4>
                   <ul className="space-y-1 text-xs text-[#252A27] dark:text-[#D1D5DB]">
-                    {sch.eligibility.map((item, idx) => (
+                    {(Array.isArray(sch.eligibility)
+                      ? sch.eligibility
+                      : []
+                    ).map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#276749] dark:bg-[#84CCA0] mt-1.5 shrink-0" />
                         <span>{item}</span>
@@ -205,15 +228,21 @@ export const ScholarshipFinderPage = () => {
                     </span>
                   </div>
 
-                  <a
-                    href={sch.officialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#276749] hover:bg-[#1F523A] text-white font-semibold transition-colors self-start sm:self-auto"
-                  >
-                    <span>Official Application Link</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  {sch.officialUrl ? (
+                    <a
+                      href={sch.officialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#276749] hover:bg-[#1F523A] text-white font-semibold transition-colors self-start sm:self-auto"
+                    >
+                      <span>Official Application Link</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
+                      Official link needs verification
+                    </span>
+                  )}
                 </div>
               </div>
             );

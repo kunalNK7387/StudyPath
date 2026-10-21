@@ -55,7 +55,7 @@ export const generateRecommendations = async (studentProfile) => {
     throw new Error("The AI did not return any country recommendations.");
   }
 
-  return countries
+  const recommendedCountries = countries
     .filter(
       (item) => item && typeof item.country === "string" && item.country.trim(),
     )
@@ -156,4 +156,36 @@ export const generateRecommendations = async (studentProfile) => {
         aiGenerated: true,
       };
     });
+  const scholarships = Array.isArray(result.data?.scholarships)
+    ? result.data.scholarships
+        .filter((item) => item && typeof item.name === "string")
+        .map((item, index) => ({
+          ...item,
+          id:
+            item.id ||
+            `scholarship-${index}-${item.name}`
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-"),
+          country: item.country || "Global",
+          provider: item.provider || "Needs verification",
+          fundingType: item.fundingType || "Needs verification",
+          scholarshipType: item.scholarshipType || "Needs verification",
+          awardAmount: item.awardAmount || "Needs verification",
+          awardDetails: item.awardDetails || "Needs verification",
+          eligibility: Array.isArray(item.eligibility) ? item.eligibility : [],
+          deadline: item.deadline || "Needs verification",
+          officialUrl:
+            typeof item.officialUrl === "string" &&
+            /^https?:\/\//i.test(item.officialUrl)
+              ? item.officialUrl
+              : "",
+          isVerified: item.isVerified === true,
+          aiGenerated: true,
+        }))
+    : [];
+
+  return {
+    countries: recommendedCountries,
+    scholarships,
+  };
 };

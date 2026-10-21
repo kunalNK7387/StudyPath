@@ -105,6 +105,44 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  // AI-generated country recommendations
+  const [recommendedCountries, setRecommendedCountries] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("studypath_recommended_countries") || "[]",
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  // AI-generated scholarships
+  const [scholarships, setScholarships] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("studypath_ai_scholarships") || "[]",
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  // Save country recommendations to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      "studypath_recommended_countries",
+      JSON.stringify(recommendedCountries),
+    );
+  }, [recommendedCountries]);
+
+  // Save scholarships to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      "studypath_ai_scholarships",
+      JSON.stringify(scholarships),
+    );
+  }, [scholarships]);
+
   // Shortlisted countries
   const [shortlistedCountries, setShortlistedCountries] = useState(() => {
     if (typeof window !== "undefined") {
@@ -371,6 +409,11 @@ export const AppProvider = ({ children }) => {
         setTheme,
         profile,
         setProfile,
+        recommendedCountries,
+        setRecommendedCountries,
+        scholarships,
+        setScholarships,
+
         loadSampleProfile,
         shortlistedCountries,
         toggleShortlistCountry,
