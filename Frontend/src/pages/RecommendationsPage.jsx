@@ -67,8 +67,6 @@ export const RecommendationsPage = () => {
     let isMounted = true;
 
     async function fetchMatches() {
-      console.log("🎓 [Recommendations] Starting AI request");
-
       setLoading(true);
       setError("");
 
@@ -107,22 +105,10 @@ export const RecommendationsPage = () => {
         if (isMounted) {
           setRecommendations(result.countries || []);
           setRecommendedCountries(result.countries || []);
-          console.log(
-            "📤 Updating AppContext scholarships:",
-            result.scholarships,
-          );
-          console.log(
-            "📊 Scholarship count before saving:",
-            result.scholarships?.length ?? 0,
-          );
-          setScholarships(result.scholarships);
 
-          console.log("✅ [Recommendations] Data sent to AppContext");
+          setScholarships(result.scholarships);
         }
       } catch (error) {
-        console.error("❌ [Recommendations] Failed:", error);
-        console.error("❌ [Recommendations] Error message:", error.message);
-
         if (isMounted) {
           setRecommendations([]);
           setError(error.message || "Unable to load recommendations.");
@@ -130,7 +116,6 @@ export const RecommendationsPage = () => {
       } finally {
         if (isMounted) {
           setLoading(false);
-          console.log("🏁 [Recommendations] Loading finished");
         }
       }
     }

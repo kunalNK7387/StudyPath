@@ -2,66 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useTheme } from "./ThemeContext.jsx";
 import { DEFAULT_ADMISSION_TASKS } from "../data/admissionTasksData.js";
 
-export const SAMPLE_INDIAN_STEM_PROFILE = {
-  fullName: "Aarav Sharma",
-  nationality: "Indian",
-  currentEducation: "B.Tech in Computer Science & Engineering",
-  academicMarks: "8.4 CGPA",
-  academicScale: "CGPA (out of 10)",
-  fieldOfStudy: "Computer Science & Engineering",
-  desiredDegree: "Master's",
-  desiredCourse: "Artificial Intelligence & Data Systems",
-  careerGoal: "Machine Learning Engineer / European Tech Researcher",
-  preferredCountries: ["germany", "ireland", "canada"],
-  preferredLanguage: "English",
-  preferredDuration: "1.5 - 2 Years",
-  annualBudgetINR: 1500000, // ₹15 Lakhs
-  totalBudgetINR: 3000000, // ₹30 Lakhs
-  needsFullScholarship: false,
-  partialFundingAcceptable: true,
-  lifestylePreference: "Moderate / Shared Apartment",
-  planningEducationLoan: true,
-  englishTest: "IELTS",
-  englishScore: "7.5 (L:8.0, R:7.5, W:7.0, S:7.0)",
-  entranceExam: "GRE",
-  entranceScore: "320 (Quant 166, Verbal 154)",
-  targetIntake: "Fall 2026",
-  passportStatus: "Valid (Ready)",
-  workExperienceYears: "1 - 2 Years",
-  extracurriculars:
-    "2 IEEE published papers, led college coding club, hackathon winner",
-};
-
-export const SAMPLE_COMMERCE_MANAGEMENT_PROFILE = {
-  fullName: "Pooja Iyer",
-  nationality: "Indian",
-  currentEducation: "B.Com (Honours)",
-  academicMarks: "76%",
-  academicScale: "Percentage (%)",
-  fieldOfStudy: "Commerce & Finance",
-  desiredDegree: "Master's",
-  desiredCourse: "International Finance & Business Analytics",
-  careerGoal: "Financial Analyst / Investment Consultant",
-  preferredCountries: ["uk", "ireland", "australia"],
-  preferredLanguage: "English",
-  preferredDuration: "1 Year",
-  annualBudgetINR: 2500000, // ₹25 Lakhs
-  totalBudgetINR: 3500000,
-  needsFullScholarship: false,
-  partialFundingAcceptable: true,
-  lifestylePreference: "Moderate / Shared Apartment",
-  planningEducationLoan: true,
-  englishTest: "IELTS",
-  englishScore: "7.0 overall",
-  entranceExam: "None / Not required",
-  entranceScore: "",
-  targetIntake: "Fall 2025",
-  passportStatus: "Valid (Ready)",
-  workExperienceYears: "1 - 2 Years",
-  extracurriculars:
-    "Senior financial analyst internship, volunteer for micro-finance NGO",
-};
-
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
@@ -387,7 +327,6 @@ export const AppProvider = ({ children }) => {
     AUD: 55.5,
     INR: 1.0,
   });
-  const ratesLastUpdated = "October 2026";
 
   // Toast notifications
   const [toasts, setToasts] = useState([]);
@@ -432,7 +371,7 @@ export const AppProvider = ({ children }) => {
         registerUser,
         logoutUser,
         exchangeRates,
-        ratesLastUpdated,
+
         toasts,
         showToast,
       }}

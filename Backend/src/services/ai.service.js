@@ -125,8 +125,6 @@ Rules:
 
   const content = response.choices?.[0]?.message?.content;
 
-  console.log("🤖 Raw AI response:", content);
-
   if (!content) {
     throw new Error("Groq returned an empty response");
   }

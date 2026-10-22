@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Search,
   ExternalLink,
@@ -19,44 +19,6 @@ export const ScholarshipFinderPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [selectedFunding, setSelectedFunding] = useState("All");
-
-  const previousCount = useRef(-1);
-  const loadStartTime = useRef(performance.now());
-
-  useEffect(() => {
-    console.log("🎓 [Scholarships] Page mounted");
-    console.log("📦 [Scholarships] Initial data:", scholarships);
-    console.log("📊 [Scholarships] Initial count:", scholarships?.length ?? 0);
-
-    return () => {
-      console.log("👋 [Scholarships] Page unmounted");
-    };
-  }, []);
-
-  useEffect(() => {
-    const count = scholarships?.length ?? 0;
-
-    if (count !== previousCount.current) {
-      console.log("📊 [Scholarships] Data count changed:", count);
-      console.log(
-        "⏱️ [Scholarships] Time since page mounted:",
-        `${((performance.now() - loadStartTime.current) / 1000).toFixed(2)}s`,
-      );
-
-      if (count > 0) {
-        console.log(
-          "✅ [Scholarships] Scholarships are available:",
-          scholarships,
-        );
-      } else {
-        console.warn(
-          "⚠️ [Scholarships] No scholarship data in AppContext yet.",
-        );
-      }
-
-      previousCount.current = count;
-    }
-  }, [scholarships]);
 
   const countries = [
     "All",

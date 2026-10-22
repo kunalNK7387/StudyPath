@@ -45,12 +45,6 @@ export const generateRecommendations = async (studentProfile) => {
 
   const result = await response.json().catch(() => ({}));
 
-  console.log("📥 API response before mapping:", result.data);
-  console.log(
-    "📊 Raw scholarship count:",
-    result.data?.scholarships?.length ?? 0,
-  );
-
   if (!response.ok || !result.success) {
     throw new Error(result.message || "Failed to generate AI recommendations.");
   }
@@ -206,11 +200,6 @@ export const generateRecommendations = async (studentProfile) => {
         })),
       );
 
-  console.log(
-    "📊 Scholarships available before mapping:",
-    rawScholarships.length,
-  );
-
   const scholarships = rawScholarships
     .filter((item) => item && typeof item.name === "string")
     .map((item, index) => ({
@@ -243,11 +232,6 @@ export const generateRecommendations = async (studentProfile) => {
       aiGenerated: true,
     }));
 
-  console.log("🧾 Final mapped scholarships:", scholarships);
-  console.log("📊 Final scholarship count:", scholarships.length);
-
-  console.log("🧾 Final mapped scholarships:", scholarships);
-  console.log("📊 Final scholarship count:", scholarships.length);
   return {
     countries: recommendedCountries,
     scholarships,
