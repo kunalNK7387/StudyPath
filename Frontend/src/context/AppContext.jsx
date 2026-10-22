@@ -338,7 +338,7 @@ export const AppProvider = ({ children }) => {
         scholarships,
         setScholarships,
 
-        loadSampleProfile,
+        
         shortlistedCountries,
         toggleShortlistCountry,
         isCountryShortlisted,

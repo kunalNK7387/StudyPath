@@ -1,11 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { useApp } from "../context/AppContext.jsx";
 
 export const HomePage = () => {
-  const { loadSampleProfile } = useApp();
-
   const steps = [
     {
       num: "1",
@@ -53,18 +50,6 @@ export const HomePage = () => {
               <span>Find My Best Country</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-
-          {/* Sample quick test shortcut for convenience */}
-          <div className="pt-4 text-xs text-[#6B7280] dark:text-[#9CA3AF]">
-            <span>Quick test? </span>
-            <button
-              type="button"
-              onClick={() => loadSampleProfile("stem")}
-              className="text-[#276749] dark:text-[#84CCA0] font-semibold underline underline-offset-2 hover:opacity-80 ml-1 cursor-pointer"
-            >
-              Load Aarav's Profile (B.Tech, 8.4 CGPA, ₹15L)
-            </button>
           </div>
         </div>
 
