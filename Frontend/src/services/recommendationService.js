@@ -45,6 +45,12 @@ export const generateRecommendations = async (studentProfile) => {
 
   const result = await response.json().catch(() => ({}));
 
+  console.log("📥 API response before mapping:", result.data);
+  console.log(
+    "📊 Raw scholarship count:",
+    result.data?.scholarships?.length ?? 0,
+  );
+
   if (!response.ok || !result.success) {
     throw new Error(result.message || "Failed to generate AI recommendations.");
   }
@@ -156,34 +162,92 @@ export const generateRecommendations = async (studentProfile) => {
         aiGenerated: true,
       };
     });
-  const scholarships = Array.isArray(result.data?.scholarships)
-    ? result.data.scholarships
-        .filter((item) => item && typeof item.name === "string")
-        .map((item, index) => ({
-          ...item,
-          id:
-            item.id ||
-            `scholarship-${index}-${item.name}`
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-"),
-          country: item.country || "Global",
-          provider: item.provider || "Needs verification",
-          fundingType: item.fundingType || "Needs verification",
-          scholarshipType: item.scholarshipType || "Needs verification",
-          awardAmount: item.awardAmount || "Needs verification",
-          awardDetails: item.awardDetails || "Needs verification",
-          eligibility: Array.isArray(item.eligibility) ? item.eligibility : [],
-          deadline: item.deadline || "Needs verification",
-          officialUrl:
-            typeof item.officialUrl === "string" &&
-            /^https?:\/\//i.test(item.officialUrl)
-              ? item.officialUrl
-              : "",
-          isVerified: item.isVerified === true,
-          aiGenerated: true,
-        }))
+
+  const data = result.data || {};
+
+  const rawCountries = Array.isArray(data.suggestedCountries)
+    ? data.suggestedCountries
     : [];
 
+  const rawScholarships = Array.isArray(data.scholarships)
+    ? data.scholarships
+    : rawCountries.flatMap((country) =>
+        (Array.isArray(country.scholarshipOptions)
+          ? country.scholarshipOptions
+          : []
+        ).map((scholarship) => ({
+          name:
+            typeof scholarship === "string"
+              ? scholarship
+              : scholarship?.name || "Scholarship option",
+
+          provider:
+            typeof scholarship === "object" && scholarship !== null
+              ? scholarship.provider || "Needs verification"
+              : "Needs verification",
+
+          country: country.country || "Global",
+
+          description:
+            typeof scholarship === "object" && scholarship !== null
+              ? scholarship.description ||
+                "Scholarship details need verification."
+              : `Scholarship option for students considering ${country.country || "this country"}.`,
+
+          fundingType: "Needs verification",
+          scholarshipType: "Needs verification",
+          awardAmount: "Needs verification",
+          awardDetails: "Needs verification",
+          eligibility: ["Needs verification"],
+          deadline: "Needs verification",
+          officialUrl: "",
+          officialWebsite: "",
+          isVerified: false,
+        })),
+      );
+
+  console.log(
+    "📊 Scholarships available before mapping:",
+    rawScholarships.length,
+  );
+
+  const scholarships = rawScholarships
+    .filter((item) => item && typeof item.name === "string")
+    .map((item, index) => ({
+      ...item,
+
+      id:
+        item.id ||
+        `scholarship-${index}-${item.name}`
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-"),
+
+      country: item.country || "Global",
+      provider: item.provider || "Needs verification",
+      fundingType: item.fundingType || "Needs verification",
+      scholarshipType: item.scholarshipType || "Needs verification",
+      awardAmount: item.awardAmount || "Needs verification",
+      awardDetails: item.awardDetails || "Needs verification",
+
+      eligibility: Array.isArray(item.eligibility) ? item.eligibility : [],
+
+      deadline: item.deadline || "Needs verification",
+
+      officialUrl:
+        typeof item.officialUrl === "string" &&
+        /^https?:\/\//i.test(item.officialUrl)
+          ? item.officialUrl
+          : "",
+
+      isVerified: item.isVerified === true,
+      aiGenerated: true,
+    }));
+
+  console.log("🧾 Final mapped scholarships:", scholarships);
+  console.log("📊 Final scholarship count:", scholarships.length);
+
+  console.log("🧾 Final mapped scholarships:", scholarships);
+  console.log("📊 Final scholarship count:", scholarships.length);
   return {
     countries: recommendedCountries,
     scholarships,

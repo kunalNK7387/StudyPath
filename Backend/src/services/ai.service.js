@@ -62,21 +62,25 @@ Return valid JSON only with this structure:
       "reason": "Why it fits"
     }
   ],
-  "scholarships": [
-    {
-      "name": "Scholarship name",
-      "provider": "Provider",
-      "country": "Country",
-      "fundingType": "Fully Funded, Partial Funding or Needs verification",
-      "scholarshipType": "Merit-based, Need-based or Needs verification",
-      "awardAmount": "Amount or Needs verification",
-      "awardDetails": "Coverage or Needs verification",
-      "eligibility": ["Requirement or Needs verification"],
-      "deadline": "Verified deadline or Needs verification",
-      "officialUrl": "",
-      "isVerified": false
-    }
-  ],
+
+"scholarships": [
+  {
+    "name": "Scholarship name",
+    "provider": "Official scholarship provider",
+    "country": "Eligible country or countries",
+    "description": "Brief explanation of the scholarship",
+    "fundingType": "Fully Funded, Partial Funding or Needs verification",
+    "scholarshipType": "Merit-based, Need-based or Needs verification",
+    "awardAmount": "Verified amount or Needs verification",
+    "awardDetails": "Tuition, living costs or other covered expenses",
+    "eligibility": ["Eligibility requirement or Needs verification"],
+    "deadline": "Verified deadline or Needs verification",
+    "officialWebsite": "Official scholarship URL or empty string",
+    "officialUrl": "Official scholarship URL or empty string",
+    "isVerified": false
+  }
+]
+
   "recommendedNextSteps": ["Next action"]
 }
 
@@ -90,6 +94,14 @@ Rules:
 - Return 1 to 3 relevant universities per country, only when reasonably confident they exist and offer relevant study options.
 - Never invent university names, official URLs, visa rules, scholarship deadlines or eligibility requirements.
 - Use "Needs verification" for facts you cannot establish confidently.
+- Return a separate top-level "scholarships" array; do not leave it empty when relevant options can be identified.
+- Return at least 5 relevant scholarship recommendations when possible.
+- Each scholarship must include name, country, description, eligibility, awardAmount, and officialWebsite.
+- Do not put scholarship recommendations only inside suggestedCountries[].scholarshipOptions.
+- Prefer scholarships relevant to the student's profile, degree, academic marks, budget, and recommended countries.
+- Never invent scholarship amounts, deadlines, eligibility requirements, or official URLs.
+- If a fact is uncertain, use "Needs verification", an empty string for an unknown URL, or false for isVerified as appropriate.
+- Set isVerified to true only when the scholarship details and official source have actually been verified.
 - Keep text concise and return JSON only, without Markdown.
 `;
 
@@ -112,6 +124,8 @@ Rules:
   });
 
   const content = response.choices?.[0]?.message?.content;
+
+  console.log("🤖 Raw AI response:", content);
 
   if (!content) {
     throw new Error("Groq returned an empty response");

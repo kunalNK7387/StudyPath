@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
   ExternalLink,
@@ -19,6 +19,44 @@ export const ScholarshipFinderPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [selectedFunding, setSelectedFunding] = useState("All");
+
+  const previousCount = useRef(-1);
+  const loadStartTime = useRef(performance.now());
+
+  useEffect(() => {
+    console.log("🎓 [Scholarships] Page mounted");
+    console.log("📦 [Scholarships] Initial data:", scholarships);
+    console.log("📊 [Scholarships] Initial count:", scholarships?.length ?? 0);
+
+    return () => {
+      console.log("👋 [Scholarships] Page unmounted");
+    };
+  }, []);
+
+  useEffect(() => {
+    const count = scholarships?.length ?? 0;
+
+    if (count !== previousCount.current) {
+      console.log("📊 [Scholarships] Data count changed:", count);
+      console.log(
+        "⏱️ [Scholarships] Time since page mounted:",
+        `${((performance.now() - loadStartTime.current) / 1000).toFixed(2)}s`,
+      );
+
+      if (count > 0) {
+        console.log(
+          "✅ [Scholarships] Scholarships are available:",
+          scholarships,
+        );
+      } else {
+        console.warn(
+          "⚠️ [Scholarships] No scholarship data in AppContext yet.",
+        );
+      }
+
+      previousCount.current = count;
+    }
+  }, [scholarships]);
 
   const countries = [
     "All",
@@ -249,9 +287,17 @@ export const ScholarshipFinderPage = () => {
           })}
 
           {filteredScholarships.length === 0 && (
-            <div className="p-8 text-center bg-white dark:bg-[#1B231F] rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32] text-sm text-[#6B7280] dark:text-[#9CA3AF]">
-              No scholarships matched your filters. Try clearing the search or
-              choosing "All Countries".
+            <div className="p-8 text-center bg-white dark:bg-[#1B231F] rounded-lg border border-[#E5E7EB] dark:border-[#2D3A32]">
+              <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-600" />
+
+              <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+                No scholarships are currently available in this list.
+              </p>
+
+              <p className="mt-2 text-xs text-[#6B7280] dark:text-[#9CA3AF]">
+                Check Country Matches & Plan to generate recommendations, then
+                return here.
+              </p>
             </div>
           )}
         </div>

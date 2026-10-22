@@ -67,6 +67,8 @@ export const RecommendationsPage = () => {
     let isMounted = true;
 
     async function fetchMatches() {
+      console.log("🎓 [Recommendations] Starting AI request");
+
       setLoading(true);
       setError("");
 
@@ -81,15 +83,45 @@ export const RecommendationsPage = () => {
           );
         }
 
+        console.log("📤 [Recommendations] Sending profile to AI");
+
+        const startTime = performance.now();
         const result = await generateRecommendations(profile);
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+
+        console.log(`⏱️ [Recommendations] Request completed in ${elapsed}s`);
+        console.log("📦 [Recommendations] Full result:", result);
+        console.log("🌍 [Recommendations] Countries:", result?.countries);
+        console.log("🎓 [Recommendations] Scholarships:", result?.scholarships);
+        console.log(
+          "📊 [Recommendations] Scholarship count:",
+          result?.scholarships?.length ?? 0,
+        );
+
+        if (!Array.isArray(result?.scholarships)) {
+          throw new Error(
+            "AI response did not contain a valid scholarships array.",
+          );
+        }
 
         if (isMounted) {
-          setRecommendations(result.countries);
-          setRecommendedCountries(result.countries);
+          setRecommendations(result.countries || []);
+          setRecommendedCountries(result.countries || []);
+          console.log(
+            "📤 Updating AppContext scholarships:",
+            result.scholarships,
+          );
+          console.log(
+            "📊 Scholarship count before saving:",
+            result.scholarships?.length ?? 0,
+          );
           setScholarships(result.scholarships);
+
+          console.log("✅ [Recommendations] Data sent to AppContext");
         }
       } catch (error) {
-        console.error("Failed to load AI recommendations:", error);
+        console.error("❌ [Recommendations] Failed:", error);
+        console.error("❌ [Recommendations] Error message:", error.message);
 
         if (isMounted) {
           setRecommendations([]);
@@ -98,6 +130,7 @@ export const RecommendationsPage = () => {
       } finally {
         if (isMounted) {
           setLoading(false);
+          console.log("🏁 [Recommendations] Loading finished");
         }
       }
     }
