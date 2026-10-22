@@ -5,11 +5,6 @@ import aiMiddleware from "../middleware/aiMiddleware.js";
 
 const router = express.Router();
 
-router.post(
-  "/recommendations",
-  authMiddleware,
-  aiMiddleware,
-  getStudyRecommendations,
-);
+router.post("/recommendations", aiMiddleware, getStudyRecommendations);
 
 export default router;
