@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useTheme } from "./ThemeContext.jsx";
 import { DEFAULT_ADMISSION_TASKS } from "../data/admissionTasksData.js";
+const API_URL = "https://studypath-1agu.onrender.com/api";
 
 const AppContext = createContext(null);
 
@@ -31,18 +32,6 @@ export const AppProvider = ({ children }) => {
         localStorage.removeItem("studypath_profile");
       }
     }
-  };
-
-  const loadSampleProfile = (type) => {
-    const chosen =
-      type === "stem"
-        ? SAMPLE_INDIAN_STEM_PROFILE
-        : SAMPLE_COMMERCE_MANAGEMENT_PROFILE;
-    setProfile(chosen);
-    showToast(
-      `Loaded sample ${type === "stem" ? "Indian STEM" : "Commerce"} profile for ${chosen.fullName}!`,
-      "success",
-    );
   };
 
   // AI-generated country recommendations
@@ -289,13 +278,14 @@ export const AppProvider = ({ children }) => {
 
   const logoutUser = async () => {
     try {
-      // 1. Call backend logout endpoint if available
-      await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    } catch {
-      // Graceful fallback if offline or backend is absent
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout request failed:", error);
     }
 
-    // 2. Clear authentication state in client-side context
     const guestUser = {
       id: "guest",
       name: "Prospective Student",
@@ -305,16 +295,11 @@ export const AppProvider = ({ children }) => {
       savedScholarshipIds: [],
       profileCompleted: false,
     };
+
     setUser(guestUser);
 
-    // 3. Clear only the authentication session data (never delete profile or application progress)
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("studypath_user");
-      // Intentionally preserve studypath_profile, studypath_admission_tasks,
-      // studypath_saved_scholarships, and studypath_shortlisted_countries
-    }
+    localStorage.removeItem("studypath_user");
 
-    // 4. Show friendly logout notification
     showToast("You have logged out successfully.", "info");
   };
 
