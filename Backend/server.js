@@ -12,10 +12,18 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://study-path-seven.vercel.app",
+  "https://study-path-cixz15m1a-kunalkhairnar595-9147s-projects.vercel.app",
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://study-path-seven.vercel.app"],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
