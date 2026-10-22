@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://studypath-1agu.onrender.com/api";
 
 const formatINR = (value) => {
   if (value === null || value === undefined || value === "") {
