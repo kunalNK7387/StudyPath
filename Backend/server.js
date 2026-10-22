@@ -15,28 +15,40 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://study-path-seven.vercel.app",
-  "https://study-path-cixz15m1a-kunalkhairnar595-9147s-projects.vercel.app",
 ];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    const isVercelPreview =
+      origin &&
+      /^https:\/\/study-path-[a-z0-9-]+-kunalkhairnar595-9147s-projects\.vercel\.app$/.test(
+        origin,
+      );
 
+    if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Origin not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Middleware must run before the routes.
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
+// Authentication routes
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("Study app is working");
 });
 
+// Protected route
 app.get("/api/protected", authMiddleware, (req, res) => {
   res.status(200).json({
     message: "You accessed a protected route!",
@@ -44,6 +56,7 @@ app.get("/api/protected", authMiddleware, (req, res) => {
   });
 });
 
+// AI routes
 app.use("/api/ai", aiRoutes);
 
 const startServer = async () => {
